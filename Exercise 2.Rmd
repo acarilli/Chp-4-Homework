@@ -1,0 +1,91 @@
+---
+title: "Exercise 2"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(broom)
+require(magrittr)
+require(kableExtra)
+require(forcats)
+require(moderndive)
+```
+
+```{r data}
+# sheep <- tibble(treatment = as_factor(c(rep("treatment",24), rep("control",24))))
+sheep <- tibble(treatment = (c(rep(1,24), rep(0,24))))
+```
+
+### (a)
+
+```{r part_a}
+# done with a regression using the moderndive package 
+
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,24))) %$% 
+  lm(death ~ treatment) %>% 
+  get_regression_table() %>% 
+  filter(term == "treatment") %>%
+  select(p_value, lower_ci, upper_ci) %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+# done with t.test
+
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,24))) %$% 
+  t.test(death ~ treatment) 
+```
+
+### (b)
+
+```{r part_b}
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,10), rep(0,14))) %$% 
+  lm(death ~ treatment) %>% 
+  get_regression_table() %>% 
+  filter(term == "treatment") %>%
+  select(p_value, lower_ci, upper_ci) %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+### (c)
+
+```{r}
+p_value <- 1
+lives <- 0
+dies <- 24
+i <- 1
+for (i in 1:24) {
+  p_value[i] <-
+    sheep %>%
+    mutate(death = c(1, rep(0, 23), rep(1, lives), rep(0, dies))) %$%
+    lm(death ~ treatment) %>%
+    get_regression_table() %>%
+    filter(term == "treatment") %>%
+    pull(p_value)
+  dies <- dies - 1
+  lives <- lives + 1
+  i <- i + 1
+}
+
+min_die <- 
+tibble(died = 24:1, p_value) %>% 
+  filter(p_value > .05) %>% 
+  top_n(-1) %>% 
+  select(died) 
+ 
+  # kable() %>% 
+  # kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+The minimal number of sheep in the control group that need to die for the treatment effect to be statiscally significant is `r min_die`.

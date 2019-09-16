@@ -1,0 +1,77 @@
+---
+title: "Exercise 3"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(broom)
+require(magrittr)
+require(kableExtra)
+require(forcats)
+require(moderndive)
+```
+
+```{r data}
+pres_vote <- read_csv("PresPartyEconGrowth1.csv")
+```
+
+### (a)
+
+```{r part_a}
+pres_vote %$% 
+  lm(unemployment ~ lagdempresident) %>%
+  tidy() %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect the unemployment rate to be 0.955 percentage points lower.  $\hat\beta_0$ tells us that if the president last year was a democrat that the unemployment rate is 6.24%. 
+
+### (b)
+
+```{r part_b}
+pres_vote %$% 
+  lm(changegdppc ~ lagdempresident) %>%
+  tidy() %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect real GDP per capita to be \$220 higher.  $\hat\beta_0$ tells us that if the president last year was a democrat that real GDP per capita would be $481.
+
+### (c)
+
+Let $\alpha = 5\%$, we fail to reject the $H_0: \beta_1=0$ since the *p* value is greater than $\alpha$ in each question.
+
+### (d)
+
+The *p* value indicates the probability of creating a type I error, that is of wrongly rejecting $H_0$.
+
+### (e)
+
+```{r part_e}
+std_error_beta_1 <- 
+pres_vote %$% 
+  lm(changegdppc ~ lagdempresident) %>% 
+  tidy() %>% 
+  filter(term == "lagdempresident") %>% 
+  pull(std.error)
+beta_range <- seq(0, 1000, 25)
+power_curve <- pnorm(beta_range/std_error_beta_1 - qnorm(.99))
+tibble(beta_range, power_curve) %>% 
+  ggplot(aes(x = beta_range, power_curve)) + 
+  geom_line() + 
+  xlab("Beta") +
+  ylab("Probability reject the null")
+
+
+```
+

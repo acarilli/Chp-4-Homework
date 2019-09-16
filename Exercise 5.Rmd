@@ -1,0 +1,95 @@
+---
+title: "Exercise 5"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(readr)
+require(janitor)
+require(broom)
+require(ggthemes)
+require(magrittr)
+require(kableExtra)
+```
+
+```{r data}
+height_wage <- read_csv("heightwage_british_males.csv")
+```
+
+### (a)
+
+```{r part_a}
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  tidy() %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+df <- 
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  glance() %>% 
+  pull(df.residual)
+```
+
+Given, the critical *t*-statistic at the $\alpha=5\%$ level of significance with $`r df`$ degrees of freedom is $`r qt(.975, df)`$, we fail to reject $H_0:\beta_0=0$ and reject $H_1:\beta_1=0$.
+
+### (b)
+
+The *p* values indicate the probability that we would see the value of each coefficient if $H_0$ were true.  For $\hat{\beta_0}$, there is a $.063$ probability that we would observe a value of $-9.346$ if $\beta_0$ were actually zero. This is not a small enough probability to give us evidence to suggest that $\beta_0\ne0$. For $\hat{\beta_1}$, there is a $.000$ probability that we would observe a value of $0.268$ if $\beta_1$ were actually zero. This is a large enough probability to give us evidence to suggest that $\beta_1\ne0$.
+
+### (c)
+
+```{r part_c}
+conf_int <- 
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  tidy() %>% 
+  select(beta = estimate, se = std.error, t = statistic)
+```
+
+The confidence interval is calculate as $\hat{\beta_i} \pm t_{n-2}se_{\hat{\beta_i}}$.  The confidence interval for $\beta_0$ is
+$$\begin{align}
+`r conf_int$beta[1]` &\pm `r qt(.975, df)` \times `r conf_int$se[1]`\\
+&\pm `r qt(.975, df)*conf_int$se[1]`\\
+`r conf_int$beta[1] - qt(.975, df) * conf_int$se[1]` \le &\beta_0 \le `r conf_int$beta[1] + qt(.975, df) * conf_int$se[1]` 
+\end{align}$$
+The confidence interval for $\beta_1$ is
+$$\begin{align}
+`r conf_int$beta[2]` &\pm `r qt(.975, df)` \times `r conf_int$se[2]`\\
+&\pm `r qt(.975, df)*conf_int$se[2]`\\
+`r conf_int$beta[2] - qt(.975, df) * conf_int$se[2]` \le &\beta_1 \le `r conf_int$beta[2] + qt(.975, df) * conf_int$se[2]` 
+\end{align}$$
+
+### (d)
+
+Given that the *p* value reported in part (a) above is 0. We would reject $H_0:\beta_1=0$.
+
+### (e)
+
+Given that we failed to reject $H_0:\beta=0$ at the the $\alpha=5\%$ level of significance, we would also fail to reject $H_0$ at the $\alpha=1\%$ level of significance.
+
+### (f)
+
+```{r part_f}
+height_wage %>% 
+  # filter(gwage33 < 400 & height33 > 40) %>% 
+  top_n(800) %$% 
+  lm(gwage33 ~ height33) %>% 
+  tidy() %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+We fail to reject $H_0:\beta_i=0 \hspace{.5cm} \forall i$.

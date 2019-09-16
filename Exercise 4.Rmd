@@ -1,0 +1,100 @@
+---
+title: "Chapter 4 Exercise 4"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output:
+  html_document: 
+    highlight: tango
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA,
+                      options(scipen = 999,
+                              digits = 3))
+require(tidyverse)
+require(broom)
+```
+
+## Exercise 4
+
+The population regression function is $Salary = 10,000 + 1,000Education + \epsilon$
+
+```{r paramaters}
+beta_0 <-10000 # set intercept
+beta_1 <- 1000 # set slope
+n <- 100 # set sample size
+N <- 50 # set number of simulations
+```
+
+### (a)
+
+```{r}
+t <- tibble(t = numeric(), p_value = numeric())
+for (i in 1:N) {
+  x <- sample(0:16, size = n, replace = TRUE) # choose values for x
+  e <- rnorm(n, 0, 10000) # generate random errors
+  y <-
+    beta_0 + beta_1 * x + e # generate values of y based on the parameter values
+  ols <- lm(y ~ x)
+  t[i, ] <- ols %>%
+    tidy() %>%
+    filter(term == "x") %>%
+    select(t = statistic, p_value = p.value)
+}
+
+t %>% 
+  ggplot(aes(x = t)) +
+  # geom_histogram(binwidth = .5) +
+  geom_density()
+t %>% 
+  summarize("Minimum t" = min(t),
+            "Maximum t" = max(t))
+
+```
+
+### (b)
+
+```{r part_b}
+t %>% 
+  ggplot(aes(x = p_value)) +
+  geom_histogram(binwidth = .001) 
+
+t %>% 
+  summarize("Minimum p value" = min(p_value),
+            "Maximum p value" = max(p_value))
+```
+
+### (c)
+
+```{r part_c}
+t %>% 
+   summarize("Percentage of simulations reject the null hypothesis" = sum(p_value < .05)/n()*100)
+```
+
+### (d)
+
+```{r part_d}
+beta_0 <- 0 # set intercept
+beta_1 <- 1000 # set slope
+n <- 100 # set sample size
+N <- 500 # set number of simulations
+
+t <- tibble(t = numeric(), p_value = numeric())
+for (i in 1:N) {
+  x <- sample(0:16, size = n, replace = TRUE) # choose values for x
+  e <- rnorm(n, 0, 10000) # generate random errors
+  y <-
+    beta_0 + beta_1 * x + e # generate values of y based on the parameter values
+  ols <- lm(y ~ x)
+  t[i, ] <- ols %>%
+    tidy() %>%
+    filter(term == "x") %>%
+    select(t = statistic, p_value = p.value)
+}
+
+t %>% 
+   summarize("Percentage of simulations reject the null hypothesis" = sum(p_value < .05)/n()*100)
+
+```
+
