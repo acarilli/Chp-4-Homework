@@ -6,21 +6,22 @@ output:
   html_document: 
     highlight: tango
     theme: cerulean
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA,
                       options(scipen = 999,
                               digits = 3))
-require(tidyverse)
-require(broom)
+library(tidyverse)
+library(broom)
 ```
 
 ## Exercise 4
 
 The population regression function is $Salary = 10,000 + 1,000Education + \epsilon$
 
-```{r paramaters}
+```{r 4-paramaters}
 beta_0 <-10000 # set intercept
 beta_1 <- 1000 # set slope
 n <- 100 # set sample size
@@ -29,7 +30,7 @@ N <- 50 # set number of simulations
 
 ### (a)
 
-```{r}
+```{r 4a}
 t <- tibble(t = numeric(), p_value = numeric())
 for (i in 1:N) {
   x <- sample(0:16, size = n, replace = TRUE) # choose values for x
@@ -55,10 +56,10 @@ t %>%
 
 ### (b)
 
-```{r part_b}
+```{r 4b}
 t %>% 
   ggplot(aes(x = p_value)) +
-  geom_histogram(binwidth = .001) 
+  geom_histogram(bins = 30) 
 
 t %>% 
   summarize("Minimum p value" = min(p_value),
@@ -67,16 +68,16 @@ t %>%
 
 ### (c)
 
-```{r part_c}
+```{r 4c}
 t %>% 
    summarize("Percentage of simulations reject the null hypothesis" = sum(p_value < .05)/n()*100)
 ```
 
 ### (d)
 
-```{r part_d}
-beta_0 <- 0 # set intercept
-beta_1 <- 1000 # set slope
+```{r 4d}
+beta_0 <- 10000 # set intercept
+beta_1 <- 0 # set slope
 n <- 100 # set sample size
 N <- 500 # set number of simulations
 

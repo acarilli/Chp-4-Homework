@@ -6,46 +6,56 @@ output:
   html_document:
     theme: cerulean
     highlight: tango
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(forcats)
-require(moderndive)
+library(tidyverse)
+library(broom)
 ```
 
-```{r data}
-pres_vote <- read_csv("PresPartyEconGrowth1.csv")
+```{r 3-data}
+pres_vote <- 
+  read_csv("PresPartyEconGrowth1.csv") %>% 
+  janitor::clean_names()
 ```
 
 ### (a)
 
-```{r part_a}
-pres_vote %$% 
-  lm(unemployment ~ lagdempresident) %>%
-  tidy() %>% 
-  kable() %>% 
-  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```{r 3a}
+pres_vote %>% 
+  lm(unemployment ~ lagdempresident, .) %>%
+  jtools::summ()
 ```
 
-$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect the unemployment rate to be 0.955 percentage points lower.  $\hat\beta_0$ tells us that if the president last year was a democrat that the unemployment rate is 6.24%. 
+```{r 3a2, echo=FALSE}
+pres_vote %>% 
+  lm(unemployment ~ lagdempresident, .) %>% 
+  tidy() %>% 
+  pull(estimate) -> beta_hats
+```
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect the unemployment rate to be `r beta_hats[2]` percentage points lower.  $\hat\beta_0$ tells us that if the president last year was a democrat that the unemployment rate was `r beta_hats[1]`%. 
 
 ### (b)
 
-```{r part_b}
-pres_vote %$% 
-  lm(changegdppc ~ lagdempresident) %>%
-  tidy() %>% 
-  kable() %>% 
-  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```{r 3b}
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>%
+  jtools::summ()
 ```
 
-$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect real GDP per capita to be \$220 higher.  $\hat\beta_0$ tells us that if the president last year was a democrat that real GDP per capita would be $481.
+```{r 3b2, echo=FALSE}
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>%
+  tidy() %>% 
+  pull(estimate) -> beta_hats
+```
+
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect real GDP per capita to be \$`r beta_hats[2]` higher.  $\hat\beta_0$ tells us that if the president last year was a democrat that real GDP per capita would be \$`r beta_hats[1]`.
 
 ### (c)
 
@@ -57,10 +67,10 @@ The *p* value indicates the probability of creating a type I error, that is of w
 
 ### (e)
 
-```{r part_e}
+```{r 3e}
 std_error_beta_1 <- 
-pres_vote %$% 
-  lm(changegdppc ~ lagdempresident) %>% 
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>% 
   tidy() %>% 
   filter(term == "lagdempresident") %>% 
   pull(std.error)
@@ -69,8 +79,24 @@ power_curve <- pnorm(beta_range/std_error_beta_1 - qnorm(.99))
 tibble(beta_range, power_curve) %>% 
   ggplot(aes(x = beta_range, power_curve)) + 
   geom_line() + 
-  xlab("Beta") +
-  ylab("Probability reject the null")
+  xlab(expression(beta[1])) +
+  ylab(expression(paste("Probability of rejecting ", H[0])))
+
+
+```
+
+
+
+
+
+```{r}
+jtools::export_summs(
+  pres_vote %>% 
+  lm(unemployment ~ lagdempresident, .),
+  
+  pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .)
+)
 
 
 ```
