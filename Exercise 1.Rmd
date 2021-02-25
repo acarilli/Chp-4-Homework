@@ -10,16 +10,16 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, 
+                      message = FALSE,
                       options(digits = 3, scipen = 999))
 library(tidyverse)
-library(janitor)
-library(broom)
-library(kableExtra)
 ```
 
 ```{r data}
-height_wage <- read_csv("HeightWage_MenWomenUS_HW.csv")
+height_wage <- 
+  here::here("data", "HeightWage_MenWomenUS_HW.csv") %>% 
+  read_csv()
 ```
 
 ### (a)
@@ -37,11 +37,10 @@ height_wage %>%
 
 ```{r 1b}
 height_wage %>%
+  # remove observations with na's
   drop_na() %>% 
   lm(wage96 ~ height85, .) %>% 
-  tidy() # %>% 
-  # kable() %>% 
-  # kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+  jtools::summ()
 ```
 
 ### (c)
@@ -51,7 +50,7 @@ t_calc <-
 height_wage %>%
   drop_na() %>% 
   lm(wage96 ~ height85, .) %>% 
-  tidy()  %>%
+  broom::tidy()  %>%
   filter(term == "height85") %>%
   pull(statistic)
 
@@ -59,7 +58,7 @@ df <-
   height_wage %>%
   drop_na() %>% 
   lm(wage96 ~ height85, .) %>% 
-  glance() %>% 
+  broom::glance() %>% 
   pull(df.residual)
 
 # t_crit <- qt(.975, df)

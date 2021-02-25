@@ -1,0 +1,398 @@
+---
+title: "Chapter 4"
+author: "Carilli"
+date: '`r format(lubridate::today(), "%B %d, %Y")`'
+output: 
+  html_document:
+    toc: false
+    toc_float: false
+    df_print: paged
+    theme: cerulean
+    highlight: tango
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, message = FALSE,
+                      options(digits = 3, scipen = 999))
+library(tidyverse)
+```
+
+# Exercises {.tabset}
+
+## 1 {.tabset}
+
+```{r 1-data}
+height_wage <- 
+  here::here("data", "HeightWage_MenWomenUS_HW.csv") %>% 
+  read_csv()
+```
+
+### (a)
+
+```{r 1a}
+height_wage %>%
+  drop_na() %>% 
+  ggplot(aes(x = height85, y = wage96)) +
+  geom_jitter(alpha = 0.3) +
+  labs(y = "Hourly wages (in dollars) in 1996",
+       x = "Adult height: height (in inches) measured in 1985") 
+```
+
+### (b)
+
+```{r 1b}
+height_wage %>%
+  drop_na() %>% 
+  lm(wage96 ~ height85, .) %>% 
+  jtools::summ()
+```
+
+### (c)
+
+```{r 1c}
+t_calc <- 
+height_wage %>%
+  drop_na() %>% 
+  lm(wage96 ~ height85, .) %>% 
+  broom::tidy()  %>%
+  filter(term == "height85") %>%
+  pull(statistic)
+
+df <- 
+  height_wage %>%
+  drop_na() %>% 
+  lm(wage96 ~ height85, .) %>% 
+  broom::glance() %>% 
+  pull(df.residual)
+
+# t_crit <- qt(.975, df)
+
+# ifelse(t_calc > t_crit, "Reject null hypothesis", "Fail to reject")
+```
+
+We wish to test
+
+$$\begin{align}
+H_0&:\beta_1=0\\
+H_1&:\beta_1\ne0
+\end{align}$$
+
+
+The critical value of $t_{`r df`}^.05 = `r qt(.975, df)`$. The calculated $t$ from the regression is $`r t_calc`$ which is greater than $`r qt(.975, df)`$, therfore we `r ifelse(t_calc > qt(.975, df), "can reject the null hypothesis.", "fail to reject the null hypothesis")` and conclude that there is evidence to believe that $\beta_1$ is not zero.
+
+
+
+## 2 {.tabset}
+
+```{r 2-data}
+
+sheep <- tibble(treatment = (c(rep(1,24), rep(0,24))))
+```
+
+### (a)
+
+```{r 2a}
+# done with a regression
+
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,24))) %>% 
+  lm(death ~ treatment, .) %>% 
+  broom::tidy(conf.int = TRUE) %>% 
+  filter(term == "treatment") %>%
+  select(p.value, conf.low, conf.high) 
+
+# done with t.test
+
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,24))) %>% 
+  t.test(death ~ treatment, .) 
+```
+
+### (b)
+
+```{r 2b}
+sheep %>% 
+  mutate(death = c(1, rep(0,23), rep(1,10), rep(0,14))) %$% 
+  lm(death ~ treatment) %>% 
+  broom::tidy(conf.int = TRUE) %>% 
+  filter(term == "treatment") %>%
+  select(p.value, conf.low, conf.high) 
+```
+
+### (c)
+
+```{r 2c}
+p_value <- 1
+lives <- 0
+dies <- 24
+i <- 1
+for (i in 1:24) {
+  p_value[i] <-
+    sheep %>%
+    mutate(death = c(1, rep(0, 23), rep(1, lives), rep(0, dies))) %>%
+    lm(death ~ treatment, .) %>%
+    broom::tidy() %>%
+    filter(term == "treatment") %>%
+    pull(p.value)
+  dies <- dies - 1
+  lives <- lives + 1
+  i <- i + 1
+}
+
+min_die <- 
+tibble(died = 24:1, p_value) %>% 
+  filter(p_value > .05) %>% 
+  top_n(-1) %>% 
+  pull(died) 
+```
+
+The minimal number of sheep in the control group that need to die for the treatment effect to be statically significant is `r min_die`.
+
+## 3 {.tabset}
+
+```{r 3-data}
+pres_vote <- 
+  here::here("data", "PresPartyEconGrowth1.csv") %>% 
+  read_csv() %>% 
+  janitor::clean_names()
+```
+
+### (a)
+
+```{r 3a}
+pres_vote %>% 
+  lm(unemployment ~ lagdempresident, .) %>%
+  broom::tidy() 
+```
+
+```{r 3a2, echo=FALSE}
+pres_vote %>% 
+  lm(unemployment ~ lagdempresident, .) %>% 
+  broom::tidy() %>% 
+  pull(estimate) -> beta_hats
+```
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect the unemployment rate to be `r beta_hats[2]` percentage points lower.  $\hat\beta_0$ tells us that if the president last year was a democrat that the unemployment rate was `r beta_hats[1]`%. 
+
+### (b)
+
+```{r 3b}
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>%
+  broom::tidy()
+```
+
+```{r 3b2, echo=FALSE}
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>%
+  broom::tidy() %>% 
+  pull(estimate) -> beta_hats
+```
+
+
+$\hat{\beta_1}$ tells us that if last year's president was a democrat we'd expect real GDP per capita to be \$`r beta_hats[2]` higher.  $\hat\beta_0$ tells us that if the president last year was a democrat that real GDP per capita would be \$`r beta_hats[1]`.
+
+### (c)
+
+Let $\alpha = 5\%$, we fail to reject the $H_0: \beta_1=0$ since the *p* value is greater than $\alpha$ in each question.
+
+### (d)
+
+The *p* value indicates the probability of creating a type I error, that is of wrongly rejecting $H_0$.
+
+### (e)
+
+```{r 3e}
+std_error_beta_1 <- 
+pres_vote %>% 
+  lm(changegdppc ~ lagdempresident, .) %>% 
+  broom::tidy() %>% 
+  filter(term == "lagdempresident") %>% 
+  pull(std.error)
+beta_range <- seq(0, 1000, 25)
+power_curve <- pnorm(beta_range/std_error_beta_1 - qnorm(.99))
+tibble(beta_range, power_curve) %>% 
+  ggplot(aes(x = beta_range, power_curve)) + 
+  geom_line() + 
+  xlab(expression(beta[1])) +
+  ylab(expression(paste("Probability of rejecting ", H[0])))
+
+
+```
+
+
+
+## 4 {.tabset}
+
+The population regression function is $Salary = 10,000 + 1,000Education + \epsilon$
+
+```{r 4-paramaters}
+beta_0 <-10000 # set intercept
+beta_1 <- 1000 # set slope
+n <- 100 # set sample size
+N <- 50 # set number of simulations
+```
+
+### (a)
+
+```{r 4a}
+t <- tibble(t = numeric(), p_value = numeric())
+for (i in 1:N) {
+  x <- sample(0:16, size = n, replace = TRUE) # choose values for x
+  e <- rnorm(n, 0, 10000) # generate random errors
+  y <-
+    beta_0 + beta_1 * x + e # generate values of y based on the parameter values
+  ols <- lm(y ~ x)
+  t[i, ] <- ols %>%
+    broom::tidy() %>%
+    filter(term == "x") %>%
+    select(t = statistic, p_value = p.value)
+}
+
+t %>% 
+  ggplot(aes(x = t)) +
+  # geom_histogram(binwidth = .5) +
+  geom_density()
+t %>% 
+  summarize("Minimum t" = min(t),
+            "Maximum t" = max(t))
+
+```
+
+### (b)
+
+```{r 4b}
+t %>% 
+  ggplot(aes(x = p_value)) +
+  geom_histogram(bins = 30) 
+
+t %>% 
+  summarize("Minimum p value" = min(p_value),
+            "Maximum p value" = max(p_value))
+```
+
+### (c)
+
+```{r 4c}
+t %>% 
+   summarize("Percentage of simulations reject the null hypothesis" = sum(p_value < .05)/n()*100)
+```
+
+### (d)
+
+```{r 4d}
+beta_0 <- 10000 # set intercept
+beta_1 <- 0 # set slope
+n <- 100 # set sample size
+N <- 500 # set number of simulations
+
+t <- tibble(t = numeric(), p_value = numeric())
+for (i in 1:N) {
+  x <- sample(0:16, size = n, replace = TRUE) # choose values for x
+  e <- rnorm(n, 0, 10000) # generate random errors
+  y <-
+    beta_0 + beta_1 * x + e # generate values of y based on the parameter values
+  ols <- lm(y ~ x)
+  t[i, ] <- ols %>%
+    broom::tidy() %>%
+    filter(term == "x") %>%
+    select(t = statistic, p_value = p.value)
+}
+
+t %>% 
+   summarize("Percentage of simulations reject the null hypothesis" = sum(p_value < .05)/n()*100)
+
+```
+
+
+
+## 5 {.tabset}
+
+```{r 5-data}
+height_wage <- 
+  here::here("data", "heightwage_british_males.csv") %>% 
+  read_csv()
+```
+
+### (a)
+
+```{r 5a}
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %>% 
+  lm(gwage33 ~ height33, .) %>% 
+  jtools::summ() 
+```  
+
+```{r 5a-df, echo=FALSE}
+df <- 
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  broom::glance() %>% 
+  pull(df.residual)
+
+tidy_stats <- 
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  broom::tidy()
+```
+
+Given, the critical *t*-statistic at the $\alpha=5\%$ level of significance with `r df` degrees of freedom is `r qt(.975, df)`, we fail to reject $H_0:\beta_0=0$ and reject $H_1:\beta_1=0$.
+
+### (b)
+
+The *p* values indicate the probability that we would see the value of each coefficient if $H_0$ were true.  For $\hat{\beta_0}$, there is a `r tidy_stats$p.value[1]` probability that we would observe a value of `r tidy_stats$estimate[1]` if $\beta_0$ were actually zero. This is not a small enough probability to give us evidence to suggest that $\beta_0\ne0$. For $\hat{\beta_1}$, there is a `r tidy_stats$p.value[2]` probability that we would observe a value of `r tidy_stats$estimate[2]` if $\beta_1$ were actually zero. This is a large enough probability to give us evidence to suggest that $\beta_1\ne0$.
+
+### (c)
+
+```{r 5c, echo=FALSE}
+conf_int <- 
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  broom::tidy() %>% 
+  select(beta = estimate, se = std.error, t = statistic)
+```
+
+The confidence interval is calculate as $\hat{\beta_i} \pm t_{n-2}se_{\hat{\beta_i}}$.  The confidence interval for $\beta_0$ is
+$$\begin{align}
+`r conf_int$beta[1]` &\pm `r qt(.975, df)` \times `r conf_int$se[1]`\\
+&\pm `r qt(.975, df)*conf_int$se[1]`\\
+`r conf_int$beta[1] - qt(.975, df) * conf_int$se[1]` \le &\beta_0 \le `r conf_int$beta[1] + qt(.975, df) * conf_int$se[1]` 
+\end{align}$$
+The confidence interval for $\beta_1$ is
+$$\begin{align}
+`r conf_int$beta[2]` &\pm `r qt(.975, df)` \times `r conf_int$se[2]`\\
+&\pm `r qt(.975, df)*conf_int$se[2]`\\
+`r conf_int$beta[2] - qt(.975, df) * conf_int$se[2]` \le &\beta_1 \le `r conf_int$beta[2] + qt(.975, df) * conf_int$se[2]` 
+\end{align}$$
+
+Alternatively we could add the argument `conf.int = TRUE` to `broom::tidy()`
+
+```{r 5c-alt}
+height_wage %>%
+  filter(gwage33 < 400 & height33 > 40) %$% 
+  lm(gwage33 ~ height33) %>% 
+  broom::tidy(conf.int  = TRUE)
+```
+
+### (d)
+
+Given that the *p* value reported in part (a) above is `r tidy_stats$p.value[2]`. We would reject $H_0:\beta_1=0$.
+
+### (e)
+
+Given that we failed to reject $H_0:\beta=0$ at the the $\alpha=5\%$ level of significance, we would also fail to reject $H_0$ at the $\alpha=1\%$ level of significance.
+
+### (f)
+
+```{r 5f}
+height_wage %>% 
+  slice(1:800) %>% 
+  lm(gwage33 ~ height33, .) %>% 
+  broom::tidy() 
+```
+
+We fail to reject $H_0:\beta_i=0 \hspace{.5cm} \forall i$.

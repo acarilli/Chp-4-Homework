@@ -13,14 +13,12 @@ output:
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
 library(tidyverse)
-library(broom)
-library(ggthemes)
-library(magrittr)
-library(kableExtra)
 ```
 
 ```{r 5-data}
-height_wage <- read_csv("heightwage_british_males.csv")
+height_wage <- 
+  here::here("data", "heightwage_british_males.csv") %>% 
+  read_csv()
 ```
 
 ### (a)
@@ -37,14 +35,14 @@ df <-
 height_wage %>%
   filter(gwage33 < 400 & height33 > 40) %$% 
   lm(gwage33 ~ height33) %>% 
-  glance() %>% 
+  broom::glance() %>% 
   pull(df.residual)
 
 tidy_stats <- 
 height_wage %>%
   filter(gwage33 < 400 & height33 > 40) %$% 
   lm(gwage33 ~ height33) %>% 
-  tidy()
+  broom::tidy()
 ```
 
 Given, the critical *t*-statistic at the $\alpha=5\%$ level of significance with `r df` degrees of freedom is `r qt(.975, df)`, we fail to reject $H_0:\beta_0=0$ and reject $H_1:\beta_1=0$.
@@ -60,7 +58,7 @@ conf_int <-
 height_wage %>%
   filter(gwage33 < 400 & height33 > 40) %$% 
   lm(gwage33 ~ height33) %>% 
-  tidy() %>% 
+  broom::tidy() %>% 
   select(beta = estimate, se = std.error, t = statistic)
 ```
 
@@ -83,7 +81,7 @@ Alternatively we could add the argument `conf.int = TRUE` to `broom::tidy()`
 height_wage %>%
   filter(gwage33 < 400 & height33 > 40) %$% 
   lm(gwage33 ~ height33) %>% 
-  tidy(conf.int  = TRUE)
+  broom::tidy(conf.int  = TRUE)
 ```
 
 ### (d)
@@ -100,7 +98,7 @@ Given that we failed to reject $H_0:\beta=0$ at the the $\alpha=5\%$ level of si
 height_wage %>% 
   slice(1:800) %>% 
   lm(gwage33 ~ height33, .) %>% 
-  tidy() 
+  broom::tidy() 
 ```
 
 We fail to reject $H_0:\beta_i=0 \hspace{.5cm} \forall i$.

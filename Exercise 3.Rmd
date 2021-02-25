@@ -13,12 +13,12 @@ output:
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
 library(tidyverse)
-library(broom)
 ```
 
 ```{r 3-data}
 pres_vote <- 
-  read_csv("PresPartyEconGrowth1.csv") %>% 
+  here::here("data", "PresPartyEconGrowth1.csv") %>% 
+  read_csv() %>% 
   janitor::clean_names()
 ```
 
@@ -68,17 +68,17 @@ The *p* value indicates the probability of creating a type I error, that is of w
 ### (e)
 
 ```{r 3e}
-std_error_beta_1 <- 
-pres_vote %>% 
-  lm(changegdppc ~ lagdempresident, .) %>% 
-  tidy() %>% 
-  filter(term == "lagdempresident") %>% 
+std_error_beta_1 <-
+  pres_vote %>%
+  lm(changegdppc ~ lagdempresident, .) %>%
+  broom::tidy() %>%
+  filter(term == "lagdempresident") %>%
   pull(std.error)
 beta_range <- seq(0, 1000, 25)
-power_curve <- pnorm(beta_range/std_error_beta_1 - qnorm(.99))
-tibble(beta_range, power_curve) %>% 
-  ggplot(aes(x = beta_range, power_curve)) + 
-  geom_line() + 
+power_curve <- pnorm(beta_range / std_error_beta_1 - qnorm(.99))
+tibble(beta_range, power_curve) %>%
+  ggplot(aes(x = beta_range, power_curve)) +
+  geom_line() +
   xlab(expression(beta[1])) +
   ylab(expression(paste("Probability of rejecting ", H[0])))
 

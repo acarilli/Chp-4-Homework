@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = FALSE, comment = NA,
                       options(scipen = 999,
                               digits = 3))
 library(tidyverse)
-library(broom)
 ```
 
 ## Exercise 4
@@ -39,7 +38,7 @@ for (i in 1:N) {
     beta_0 + beta_1 * x + e # generate values of y based on the parameter values
   ols <- lm(y ~ x)
   t[i, ] <- ols %>%
-    tidy() %>%
+    broom::tidy() %>%
     filter(term == "x") %>%
     select(t = statistic, p_value = p.value)
 }
@@ -89,7 +88,7 @@ for (i in 1:N) {
     beta_0 + beta_1 * x + e # generate values of y based on the parameter values
   ols <- lm(y ~ x)
   t[i, ] <- ols %>%
-    tidy() %>%
+    broom::tidy() %>%
     filter(term == "x") %>%
     select(t = statistic, p_value = p.value)
 }

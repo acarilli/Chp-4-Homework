@@ -13,23 +13,21 @@ output:
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
 library(tidyverse)
-library(broom)
+
 ```
 
 ```{r data}
-# sheep <- tibble(treatment = as_factor(c(rep("treatment",24), rep("control",24))))
 sheep <- tibble(treatment = (c(rep(1,24), rep(0,24))))
 ```
 
 ### (a)
 
 ```{r 2a}
-# done with a regression
 
 sheep %>% 
   mutate(death = c(1, rep(0,23), rep(1,24))) %>% 
   lm(death ~ treatment, .) %>% 
-  tidy(conf.int = TRUE) %>% 
+  broom::tidy(conf.int = TRUE) %>% 
   filter(term == "treatment") %>%
   select(p.value, conf.low, conf.high) 
 
@@ -46,7 +44,7 @@ sheep %>%
 sheep %>% 
   mutate(death = c(1, rep(0,23), rep(1,10), rep(0,14))) %$% 
   lm(death ~ treatment) %>% 
-  tidy(conf.int = TRUE) %>% 
+  broom::tidy(conf.int = TRUE) %>% 
   filter(term == "treatment") %>%
   select(p.value, conf.low, conf.high) 
 ```
@@ -63,7 +61,7 @@ for (i in 1:24) {
     sheep %>%
     mutate(death = c(1, rep(0, 23), rep(1, lives), rep(0, dies))) %>%
     lm(death ~ treatment, .) %>%
-    tidy() %>%
+    broom::tidy() %>%
     filter(term == "treatment") %>%
     pull(p.value)
   dies <- dies - 1
